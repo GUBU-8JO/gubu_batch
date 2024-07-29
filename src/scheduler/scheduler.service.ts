@@ -21,7 +21,7 @@ export class SchedulerService {
     private subscriptionHistoriesRepository: Repository<SubscriptionHistories>,
   ) {}
 
-  @Cron('00 09 17 * * *')
+  @Cron('30 35 17 * * *')
   async handleCron() {
     this.logger.debug('알림 시작!');
 
@@ -47,7 +47,7 @@ export class SchedulerService {
       notifyingDate.setHours(0, 0, 0, 0); // 시간 초기화
       console.log('notifyingDate', notifyingDate);
 
-      // today와 notifyingDate 비교
+      // today와 notifyingDate 비교하여 알림 생성
       if (notifyingDate.getTime() === today.getTime()) {
         // user nickname 가져오기
         const userNickname = subscriptionHistory.userSubscription.user.nickname;
