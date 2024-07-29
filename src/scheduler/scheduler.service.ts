@@ -21,23 +21,16 @@ export class SchedulerService {
     private subscriptionHistoriesRepository: Repository<SubscriptionHistories>,
   ) {}
 
-  @Cron('00 36 12 * * *')
+  @Cron('00 34 15 * * *')
   async handleCron() {
     this.logger.debug('알림 테스트');
 
-    // 구독 정보 가져오기
-    // const userSubscription = await this.userSubscriptionsRepository.find({
-    //   relations: ['user'],
-    // });
-    // console.log(userSubscription);
-
     // 결제 이력 가져오기
-    const SubscriptionHistory = await this.subscriptionHistoriesRepository.find(
-      {
-        relations: ['userSubscription'],
-      },
-    );
-    console.log(SubscriptionHistory);
+    const subscriptionHistories =
+      await this.subscriptionHistoriesRepository.find({
+        relations: ['userSubscription', 'userSubscription.user'],
+      });
+    console.log(subscriptionHistories);
 
     // today 설정
     const today = new Date();
@@ -45,9 +38,9 @@ export class SchedulerService {
     today.setHours(0, 0, 0, 0);
     console.log('today', today);
     // 결제정보 순회하면서 다음 결제일 가져오기
-    SubscriptionHistory.forEach((SubscriptionHistory) => {
+    for (const paymentHistory of subscriptionHistories) {
       // 결제일 설정(일단, 결제 시작일)
-      const payDate = SubscriptionHistory.nextDate;
+      const payDate = paymentHistory.nextDate;
       console.log('payDate', payDate);
       // 알람일 설정(결제일 -1)
       const notifyingDate = new Date(payDate);
@@ -59,9 +52,20 @@ export class SchedulerService {
       if (notifyingDate.getDate() == today.getDate()) {
         const message = '결제일 1일 전입니다.';
         console.log(message);
-        return message;
+
+        // notification 저장
+        const newNotification = this.notificationRepository.create({
+          userId: paymentHistory.userSubscription.userId,
+          userSubscriptionId: paymentHistory.userSubscriptionId,
+          title: message,
+          isRead: false,
+          createdAt: new Date(),
+          readedAt: new Date(),
+        });
+        console.log(newNotification);
+        await this.notificationRepository.save(newNotification);
       }
-    });
+    }
   }
 
   //   @Cron('00 13 18 * * *')
