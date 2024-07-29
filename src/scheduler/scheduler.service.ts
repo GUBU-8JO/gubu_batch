@@ -21,7 +21,7 @@ export class SchedulerService {
     private subscriptionHistoriesRepository: Repository<SubscriptionHistories>,
   ) {}
 
-  @Cron('00 47 16 * * *')
+  @Cron('00 09 17 * * *')
   async handleCron() {
     this.logger.debug('알림 시작!');
 
@@ -34,8 +34,7 @@ export class SchedulerService {
 
     // today 설정
     const today = new Date();
-    // 날짜만 필요해서 시간은 초기화
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // 시간 초기화
     console.log('today', today);
     // 결제정보 순회하면서 다음 결제일 가져오기
     for (const subscriptionHistory of subscriptionHistories) {
@@ -44,12 +43,13 @@ export class SchedulerService {
       console.log('payDate', payDate);
       // 알람일 설정(결제일 -1)
       const notifyingDate = new Date(payDate);
-      notifyingDate.setDate(notifyingDate.getDate() - 1);
-      notifyingDate.setHours(0, 0, 0, 0);
+      notifyingDate.setDate(notifyingDate.getDate() - 1); // 1일 전으로 설정
+      notifyingDate.setHours(0, 0, 0, 0); // 시간 초기화
       console.log('notifyingDate', notifyingDate);
 
       // today와 notifyingDate 비교
       if (notifyingDate.getTime() === today.getTime()) {
+        // user nickname 가져오기
         const userNickname = subscriptionHistory.userSubscription.user.nickname;
         const message = `${userNickname}님 결제일 1일 전입니다.`;
         console.log(message);
@@ -68,7 +68,10 @@ export class SchedulerService {
 
         // subscriptionHistory의 NextDate 업데이트
         const nextPayDate = new Date(payDate);
-        nextPayDate.setMonth(nextPayDate.getMonth() + 1);
+        // 결제주기 가져오기
+        const period = subscriptionHistory.userSubscription.period;
+        console.log('기간', period);
+        nextPayDate.setMonth(nextPayDate.getMonth() + period);
         await this.subscriptionHistoriesRepository.update(subscriptionHistory, {
           nextDate: nextPayDate,
         });
