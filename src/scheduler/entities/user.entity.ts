@@ -1,6 +1,7 @@
 import { IsNotEmpty } from 'class-validator';
-import { Notifications } from './notification.entity';
-import { UserSubscriptions } from './user-subscription.entity';
+import { Notification } from './notification.entity';
+import { Review } from './review.entity';
+import { UserSubscription } from './user-subscription.entity';
 import {
   Column,
   CreateDateColumn,
@@ -34,11 +35,15 @@ export class User {
   updatedAt: Date;
 
   @OneToMany(
-    () => UserSubscriptions,
+    () => UserSubscription,
     (userSubscription) => userSubscription.user,
   )
-  userSubscription: UserSubscriptions[];
+  userSubscription: UserSubscription[];
 
-  @OneToMany(() => Notifications, (notification) => notification.user)
-  notification: Notifications[];
+  @OneToMany(() => Review, (review) => review.user)
+  review: Review[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notification: Notification[];
 }
+///

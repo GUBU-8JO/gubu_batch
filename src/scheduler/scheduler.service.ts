@@ -2,22 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Notifications } from './entities/notification.entity';
-import { SubscriptionHistories } from './entities/subscription-histories.entity';
+import { Notification } from './entities/notification.entity';
+import { SubscriptionHistory } from './entities/subscription-histories.entity';
 
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
 
   constructor(
-    @InjectRepository(Notifications)
-    private notificationRepository: Repository<Notifications>,
-    @InjectRepository(SubscriptionHistories)
-    private subscriptionHistoriesRepository: Repository<SubscriptionHistories>,
+    @InjectRepository(Notification)
+    private notificationRepository: Repository<Notification>,
+    @InjectRepository(SubscriptionHistory)
+    private subscriptionHistoriesRepository: Repository<SubscriptionHistory>,
   ) {}
 
-
-  @Cron('30 35 17 * * *')
+  @Cron('00 * * * * *')
   async createNotification() {
     this.logger.debug('알림 시작!');
 
