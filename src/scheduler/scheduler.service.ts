@@ -56,18 +56,25 @@ export class SchedulerService {
     }
   }
 
+  // subscriptionHistory데이터 가져오기
   async getSubscriptionHistories() {
     return await this.subscriptionHistoriesRepository.find({
-      relations: ['userSubscription', 'userSubscription.user'],
+      relations: [
+        'userSubscription',
+        'userSubscription.user',
+        'userSubscription.platform',
+      ],
     });
   }
 
+  // today 설정하기
   setToday(): Date {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // 시간 초기화
     return today;
   }
 
+  // notifyingDate 설정하기
   getNotifyingDate(payDate: Date): Date {
     const notifyingDate = new Date(payDate);
     notifyingDate.setDate(notifyingDate.getDate() - 1); // 1일 전으로 설정
@@ -75,9 +82,11 @@ export class SchedulerService {
     return notifyingDate;
   }
 
+  // notification 생성하기
   async createNotifications(subscriptionHistory: any) {
     const userNickname = subscriptionHistory.userSubscription.user.nickname;
-    const message = `${userNickname}님 결제일 1일 전입니다.`;
+    const platformTitle = subscriptionHistory.userSubscription.platform.title;
+    const message = `${userNickname}님 ${platformTitle}결제일 1일 전입니다.`;
     console.log(message);
 
     const newNotification = await this.notificationRepository.save({
