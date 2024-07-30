@@ -16,8 +16,9 @@ export class SchedulerService {
     private subscriptionHistoriesRepository: Repository<SubscriptionHistories>,
   ) {}
 
-  @Cron('30 * * * * *')
-  async handleCron() {
+
+  @Cron('30 35 17 * * *')
+  async createNotification() {
     this.logger.debug('알림 시작!');
 
     // 결제 이력 가져오기
