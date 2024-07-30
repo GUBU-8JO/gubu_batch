@@ -22,7 +22,7 @@ export class SchedulerService {
   ) {}
 
   @Cron('30 35 17 * * *')
-  async handleCron() {
+  async createNotification() {
     this.logger.debug('알림 시작!');
 
     // 결제 이력 가져오기
