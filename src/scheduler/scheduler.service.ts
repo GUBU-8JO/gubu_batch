@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
 import { SubscriptionHistory } from './entities/subscription-histories.entity';
+import { Review } from './entities/review.entity';
+import { Platform } from './entities/platforms.entity';
 
 @Injectable()
 export class SchedulerService {
@@ -14,9 +16,14 @@ export class SchedulerService {
     private notificationRepository: Repository<Notification>,
     @InjectRepository(SubscriptionHistory)
     private subscriptionHistoriesRepository: Repository<SubscriptionHistory>,
+    @InjectRepository(Review)
+    private reviewRepository: Repository<Review>,
+    @InjectRepository(Platform)
+    private platformRepository: Repository<Platform>,
   ) {}
 
-  @Cron('00 * * * * *')
+  /** 알림 생성 스케쥴링 */
+  @Cron('* * 00 * * *')
   async createNotification() {
     this.logger.debug('알림 시작!');
 
@@ -100,12 +107,57 @@ export class SchedulerService {
     return newNotification;
   }
 
+  // subscriptionHistory의 NextDate 변경하기
   async updateNextDate(nextPayDate: Date, subscriptionHistory: any) {
     const period = subscriptionHistory.userSubscription.period;
     console.log('기간', period);
     nextPayDate.setMonth(nextPayDate.getMonth() + period);
     await this.subscriptionHistoriesRepository.update(subscriptionHistory, {
       nextDate: nextPayDate,
+    });
+  }
+
+  /** 평점 계산 스케쥴링 */
+  @Cron('* * 00 * * *')
+  async ratingCalculation() {
+    this.logger.debug('평점 계산 시작!');
+
+    // 리뷰 가져오기
+    const platformsReview = await this.findPlatformsReview();
+    console.log(platformsReview);
+
+    // platform의 review 그룹화하기
+    const platformReviews = {};
+
+    // platformId에 맞는 rate 추가
+    for (const review of platformsReview) {
+      // rate 없으면 빈 배열
+      if (!platformReviews[review.platformId]) {
+        platformReviews[review.platformId] = [];
+      }
+      platformReviews[review.platformId].push(review.rate);
+    }
+
+    // 각 platform의 rating 계산 후 업데이트
+    for (const platformId in platformReviews) {
+      const reviewRates = platformReviews[platformId];
+      const totalRate = reviewRates.reduce((sum, rate) => sum + rate, 0);
+      const averageRating = totalRate / reviewRates.length;
+
+      // 소수점 반올림
+      const roundsRating = parseFloat(averageRating.toFixed(0));
+
+      // platform의 rating 변경하기
+      await this.platformRepository.update(platformId, {
+        rating: roundsRating,
+      });
+    }
+  }
+
+  // review 가져오기
+  async findPlatformsReview() {
+    return await this.reviewRepository.find({
+      relations: ['platform'],
     });
   }
 }
