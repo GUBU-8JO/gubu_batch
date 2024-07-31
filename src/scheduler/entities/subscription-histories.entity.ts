@@ -1,4 +1,4 @@
-import { UserSubscriptions } from './user-subscription.entity';
+import { UserSubscription } from './user-subscription.entity';
 import {
   Column,
   Entity,
@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class SubscriptionHistories {
+export class SubscriptionHistory {
   @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
@@ -24,13 +24,13 @@ export class SubscriptionHistories {
   @Column()
   price: number;
 
-  @Column()
-  stopDate: Date;
+  @Column({ nullable: true })
+  stopDate?: Date;
 
   @ManyToOne(
-    () => UserSubscriptions,
+    () => UserSubscription,
     (userSubscription) => userSubscription.subscriptionHistory,
   )
   @JoinColumn({ name: 'user_subscription_id' })
-  userSubscription: UserSubscriptions;
+  userSubscription: UserSubscription;
 }

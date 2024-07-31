@@ -5,8 +5,8 @@ import {
   IsString,
   Matches,
 } from 'class-validator';
-import { Notifications } from './notification.entity';
-import { SubscriptionHistories } from './subscription-histories.entity';
+import { Notification } from './notification.entity';
+import { SubscriptionHistory } from './subscription-histories.entity';
 import { User } from './user.entity';
 import {
   Column,
@@ -19,9 +19,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Platform } from './platforms.entity';
 
 @Entity()
-export class UserSubscriptions {
+export class UserSubscription {
   @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
@@ -69,16 +70,20 @@ export class UserSubscriptions {
   deletedAt: Date;
 
   @OneToMany(
-    () => SubscriptionHistories,
+    () => SubscriptionHistory,
     (subscriptionHistory) => subscriptionHistory.userSubscription,
   )
-  subscriptionHistory: SubscriptionHistories[];
+  subscriptionHistory: SubscriptionHistory[];
 
   @OneToMany(
-    () => Notifications,
+    () => Notification,
     (notification) => notification.userSubscription,
   )
-  notification: Notifications[];
+  notification: Notification[];
+
+  @ManyToOne(() => Platform, (platform) => platform.userSubscription)
+  @JoinColumn({ name: 'platform_id' })
+  platform: Platform;
 
   @ManyToOne(() => User, (user) => user.userSubscription)
   @JoinColumn({ name: 'user_id' })

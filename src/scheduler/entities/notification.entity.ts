@@ -1,4 +1,4 @@
-import { UserSubscriptions } from './user-subscription.entity';
+import { UserSubscription } from './user-subscription.entity';
 import { User } from './user.entity';
 import {
   Column,
@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Notifications {
+export class Notification {
   @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
@@ -24,23 +24,23 @@ export class Notifications {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ default: false })
   isRead: boolean;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
-  readedAt: Date;
+  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  readedAt?: Date;
 
   @ManyToOne(() => User, (user) => user.notification, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(
-    () => UserSubscriptions,
+    () => UserSubscription,
     (userSubscription) => userSubscription.notification,
   )
   @JoinColumn({ name: 'user_subscription_id' })
-  userSubscription: UserSubscriptions;
+  userSubscription: UserSubscription;
 }
