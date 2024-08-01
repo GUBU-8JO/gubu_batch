@@ -38,7 +38,7 @@ export class SchedulerService {
     // 결제정보 순회하면서 다음 결제일 가져오기
     for (const subscriptionHistory of subscriptionHistories) {
       // 결제일 설정(일단, 결제 시작일)
-      const payDate = subscriptionHistory.nextDate;
+      const payDate = subscriptionHistory.nextPayAt;
       console.log('payDate', payDate);
       // 알람일 설정(결제일 -1)
       const notifyingDate = this.getNotifyingDate(payDate);
@@ -113,7 +113,7 @@ export class SchedulerService {
     console.log('기간', period);
     nextPayDate.setMonth(nextPayDate.getMonth() + period);
     await this.subscriptionHistoriesRepository.update(subscriptionHistory, {
-      nextDate: nextPayDate,
+      nextPayAt: nextPayDate,
     });
   }
 
