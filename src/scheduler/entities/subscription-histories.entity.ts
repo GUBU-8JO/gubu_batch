@@ -19,10 +19,13 @@ export class SubscriptionHistory {
   //매 달마다 갱신을 해주는 거라 생각을 한다면 endAt이 맞는데 어떻게 생각하시나요..?
   @Column({ type: 'date', comment: '다음 구독 결제일' })
   nextPayAt: Date;
+
   @Column({ comment: '결제 가격' })
   price: number;
+
   @Column({ type: 'date', nullable: true, comment: '구독 중지일' })
   stopRequestAt?: Date;
+
   @ManyToOne(
     () => UserSubscription,
     (userSubscription) => userSubscription.subscriptionHistory,
