@@ -1,4 +1,4 @@
-name: GuBu CD
+name: GuBu-Batch CD
 
 on:
   workflow_dispatch:
