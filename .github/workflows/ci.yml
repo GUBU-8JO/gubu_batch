@@ -1,5 +1,4 @@
-name: GuBu CI
-
+name: GuBu-Batch CI
 on:
   workflow_dispatch:
   push:
@@ -26,5 +25,5 @@ jobs:
         run: npm ci
 #      - name: Run test # step의 이름 지정 (선택 사항)
 #        run: |
-#          yarn test
+#          npm run test
 #          npm run test

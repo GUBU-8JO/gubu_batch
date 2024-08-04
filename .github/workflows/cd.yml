@@ -1,9 +1,9 @@
-name: GuBu CD
+name: GuBu-Batch CD
 
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ['GuBu CI']
+    workflows: ['GuBu-Batch CI']
     types: [completed]
     branches: [main]
 
@@ -25,22 +25,22 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-            sudo cd /home/8Jo/gubu_batch
+            cd /home/ubuntu/8JO/gubu_batch
 
-            sudo git switch main
+            git switch main
 
-            sudo git pull
+            git pull
 
-            sudo echo "${{ secrets.SERVER_ENV }}" > .env
+            echo "${{ secrets.SERVER_ENV }}" > .env
 
-            sudo npm ci
+            npm ci
 
-            sudo npm run build
+            npm run build
 
-            sudo pm2 delete gubu || true
+            pm2 delete gubu-batch || true
 
-            sudo pm2 start dist/main.js --name gubu
+            pm2 start dist/main.js --name gubu-batch
 
-            sudo pm2 save
+            pm2 save --force
 
-            sudo pm2 startup
+            pm2 startup
