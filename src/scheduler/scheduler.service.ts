@@ -52,7 +52,7 @@ export class SchedulerService {
         const userNickname = subscriptionHistory.userSubscription.user.nickname;
         const platformTitle =
           subscriptionHistory.userSubscription.platform.title;
-        const message = `${userNickname}님 ${platformTitle}결제일 1일 전입니다.`;
+        const message = `${platformTitle}결제일 1일 전입니다.`;
 
         return this.notificationRepository.create({
           userId: subscriptionHistory.userSubscription.userId,
@@ -71,6 +71,11 @@ export class SchedulerService {
           const nextPayDate = new Date(subscriptionHistory.nextPayAt);
           const period = subscriptionHistory.userSubscription.period;
           nextPayDate.setMonth(nextPayDate.getMonth() + period);
+
+          const lastDayOfNextMonth = new Date(nextPayDate.getFullYear(), nextPayDate.getMonth() + 1, 0).getDate();
+          if (nextPayDate.getDate() > lastDayOfNextMonth) {
+            nextPayDate.setDate(lastDayOfNextMonth);
+          }
 
           return this.subscriptionHistoriesRepository.update(
             subscriptionHistory.id,
