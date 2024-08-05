@@ -42,5 +42,3 @@ jobs:
             pm2 start dist/main.js --name gubu-batch
 
             pm2 save
-
-            pm2 startup
