@@ -52,7 +52,7 @@ export class SchedulerService {
         const userNickname = subscriptionHistory.userSubscription.user.nickname;
         const platformTitle =
           subscriptionHistory.userSubscription.platform.title;
-        const message = `${platformTitle}결제일 1일 전입니다.`;
+        const message = `${platformTitle} 결제일 1일 전입니다.`;
 
         return this.notificationRepository.create({
           userId: subscriptionHistory.userSubscription.userId,
