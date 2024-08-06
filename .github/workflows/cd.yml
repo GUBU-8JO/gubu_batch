@@ -33,6 +33,7 @@ jobs:
 
             echo "${{ secrets.SERVER_ENV }}" > .env
 
+<<<<<<< HEAD
             # npm ci
 
             # npm run build
@@ -42,3 +43,14 @@ jobs:
             # pm2 start dist/main.js --name gubu-batch
 
             # pm2 save
+=======
+            npm ci
+
+            npm run build
+
+            pm2 delete gubu-batch || true
+
+            pm2 start dist/main.js --name gubu-batch
+
+            pm2 save
+>>>>>>> 36dafc2fdcf2e314b7bdc15be89752b1cc63745d
