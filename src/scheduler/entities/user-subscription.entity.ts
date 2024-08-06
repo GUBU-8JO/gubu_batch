@@ -88,11 +88,15 @@ export class UserSubscription {
   )
   notification: Notification[];
 
-  @ManyToOne(() => Platform, (platform) => platform.userSubscription)
+  @ManyToOne(() => Platform, (platform) => platform.userSubscription, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'platform_id' })
   platform: Platform;
 
-  @ManyToOne(() => User, (user) => user.userSubscription)
+  @ManyToOne(() => User, (user) => user.userSubscription, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 }

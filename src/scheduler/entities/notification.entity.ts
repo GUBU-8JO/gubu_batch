@@ -37,13 +37,17 @@ export class Notification {
   })
   readedAt?: Date;
 
-  @ManyToOne(() => User, (user) => user.notification, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.notification, {
+    onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(
     () => UserSubscription,
     (userSubscription) => userSubscription.notification,
+    { createForeignKeyConstraints: false },
   )
   @JoinColumn({ name: 'user_subscription_id' })
   userSubscription: UserSubscription;

@@ -37,11 +37,15 @@ export class Review {
   @DeleteDateColumn({ type: 'datetime', comment: '후기 삭제 날짜' })
   DeletedAt: number;
 
-  @ManyToOne(() => Platform, (platform) => platform.review)
+  @ManyToOne(() => Platform, (platform) => platform.review, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'platform_id' })
   platform: Platform;
 
-  @ManyToOne(() => User, (user) => user.review)
+  @ManyToOne(() => User, (user) => user.review, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 }

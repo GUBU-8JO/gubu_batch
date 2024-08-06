@@ -29,6 +29,7 @@ export class SubscriptionHistory {
   @ManyToOne(
     () => UserSubscription,
     (userSubscription) => userSubscription.subscriptionHistory,
+    { createForeignKeyConstraints: false },
   )
   @JoinColumn({ name: 'user_subscription_id' })
   userSubscription: UserSubscription;
