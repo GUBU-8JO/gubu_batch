@@ -211,23 +211,22 @@ export class SchedulerService {
       // 만들어진 배열을 가지고 계산, 평균
 
       // 소수점 반올림
-      const roundsRating = parseFloat(averageRating.toFixed(0));
+      const roundsRating = parseFloat(averageRating.toFixed(1));
 
       // platform의 rating 변경하기
-      //   await this.platformRepository.update(platformId, {
-      //     rating: roundsRating,
-      //     // 플랫폼의 rating 칼럼에 업데이트 해주기
-      //   });
-      // }
+      // 플랫폼의 rating 칼럼에 업데이트 해주기
+      await this.platformRepository.update(platformId, {
+        rating: roundsRating,
+      });
     }
-
-    // review와 관계된 플랫폼 정보 가져오기
-    // async findPlatformsReview() {
-    //   return await this.reviewRepository.find({
-    //     relations: ['platform'],
-    //   });
-    // }
   }
+
+  // review와 관계된 플랫폼 정보 가져오기
+  // async findPlatformsReview() {
+  //   return await this.reviewRepository.find({
+  //     relations: ['platform'],
+  //   });
+  // }
 }
 // 기술적 의사 결정
 // 플랫폼과 리뷰를 모두 배열로 가져와줌
