@@ -211,7 +211,7 @@ export class SchedulerService {
       // 만들어진 배열을 가지고 계산, 평균
 
       // 소수점 반올림
-      const roundsRating = parseFloat(averageRating.toFixed(0));
+      const roundsRating = parseFloat(averageRating.toFixed(1));
 
       // platform의 rating 변경하기
       // 플랫폼의 rating 칼럼에 업데이트 해주기
