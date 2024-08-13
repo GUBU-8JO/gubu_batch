@@ -29,7 +29,7 @@ jobs:
 
             cd /home/ubuntu/8JO/gubu_batch
 
-            pm2 delete gubu-barch || true
+            pm2 delete gubu-batch || true
             
             rm -rf dist/
 
