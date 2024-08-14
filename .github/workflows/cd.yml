@@ -37,7 +37,7 @@ jobs:
 
             echo "${{ secrets.SERVER_ENV }}" | base64 -d > .env
 
-            pm2 start dist/bundle.js --name gubu-batch
+            pm2 start bundle.js --name gubu-batch
 
             rm gubu-batch.tar.gz
 
