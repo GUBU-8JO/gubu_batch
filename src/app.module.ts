@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { RedisModule } from './scheduler/redis/redis.module';
+import { SlackModule } from './slack/slack.module';
 
 const typeOrmModuleOptions = {
   useFactory: async (
@@ -34,6 +36,8 @@ const typeOrmModuleOptions = {
     TypeOrmModule.forRootAsync(typeOrmModuleOptions),
     ScheduleModule.forRoot(),
     SchedulerModule,
+    RedisModule,
+    SlackModule,
   ],
   controllers: [AppController],
   providers: [AppService],
