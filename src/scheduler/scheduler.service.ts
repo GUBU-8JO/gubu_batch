@@ -7,7 +7,7 @@ import { SubscriptionHistory } from './entities/subscription-histories.entity';
 import { Review } from './entities/review.entity';
 import { Platform } from './entities/platforms.entity';
 import { RedisService } from './redis/redis.service';
-
+import {SlackService} from '../slack/slack.service'
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
@@ -21,6 +21,7 @@ export class SchedulerService {
     @InjectRepository(Platform)
     private platformRepository: Repository<Platform>,
     private readonly redisService: RedisService,
+    private readonly slackService: SlackService, 
   ) {}
 
   /** 알림 생성 스케쥴링 */
@@ -28,152 +29,71 @@ export class SchedulerService {
   async createNotification() {
     this.logger.debug('알림 시작!');
 
-    // 다음 결제일이 내일인 결제 이력 가져오기
-    const tomorrow = new Date();
-    tomorrow.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    try {
+      // 다음 결제일이 내일인 결제 이력 가져오기
+      const tomorrow = new Date();
+      tomorrow.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const subscriptionHistories =
-      await this.subscriptionHistoriesRepository.find({
-        where: {
-          nextPayAt: tomorrow,
-          stopRequestAt: IsNull(),
-        },
-        relations: [
-          'userSubscription',
-          'userSubscription.user',
-          'userSubscription.platform',
-        ],
-      });
-    console.log('내일인 결제이력', subscriptionHistories);
-
-    if (subscriptionHistories.length > 0) {
-      const notifications = subscriptionHistories.map((subscriptionHistory) => {
-        const userNickname = subscriptionHistory.userSubscription.user.nickname;
-        const platformTitle =
-          subscriptionHistory.userSubscription.platform.title;
-        const message = `${userNickname}님 ${platformTitle}결제일 1일 전입니다.`;
-
-        return this.notificationRepository.create({
-          userId: subscriptionHistory.userSubscription.userId,
-          userSubscriptionId: subscriptionHistory.userSubscriptionId,
-          title: message,
-          isRead: false,
-          createdAt: new Date(),
-          readedAt: null,
+      const subscriptionHistories =
+        await this.subscriptionHistoriesRepository.find({
+          where: {
+            nextPayAt: tomorrow,
+            stopRequestAt: IsNull(),
+          },
+          relations: [
+            'userSubscription',
+            'userSubscription.user',
+            'userSubscription.platform',
+          ],
         });
-      });
-      await this.notificationRepository.save(notifications);
-      console.log('알림 발생', notifications);
+      console.log('내일인 결제이력', subscriptionHistories);
 
-      const updatePromises = subscriptionHistories.map(
-        (subscriptionHistory) => {
-          const nextPayDate = new Date(subscriptionHistory.nextPayAt);
-          const period = subscriptionHistory.userSubscription.period;
-          nextPayDate.setMonth(nextPayDate.getMonth() + period);
+      if (subscriptionHistories.length > 0) {
+        const notifications = subscriptionHistories.map((subscriptionHistory) => {
+          const userNickname = subscriptionHistory.userSubscription.user.nickname;
+          const platformTitle =
+            subscriptionHistory.userSubscription.platform.title;
+          const message = `${userNickname}님 ${platformTitle} 결제일 1일 전입니다.`;
 
-          return this.subscriptionHistoriesRepository.update(
-            subscriptionHistory.id,
-            {
-              nextPayAt: nextPayDate,
-            },
-          );
-        },
-      );
-      await Promise.all(updatePromises);
-    } else {
-      this.logger.debug('알림을 생성할 결제 이력이 없습니다.');
+          return this.notificationRepository.create({
+            userId: subscriptionHistory.userSubscription.userId,
+            userSubscriptionId: subscriptionHistory.userSubscriptionId,
+            title: message,
+            isRead: false,
+            createdAt: new Date(),
+            readedAt: null,
+          });
+        });
+        await this.notificationRepository.save(notifications);
+        console.log('알림 발생', notifications);
+
+        const updatePromises = subscriptionHistories.map(
+          (subscriptionHistory) => {
+            const nextPayDate = new Date(subscriptionHistory.nextPayAt);
+            const period = subscriptionHistory.userSubscription.period;
+            nextPayDate.setMonth(nextPayDate.getMonth() + period);
+
+            return this.subscriptionHistoriesRepository.update(
+              subscriptionHistory.id,
+              {
+                nextPayAt: nextPayDate,
+              },
+            );
+          },
+        );
+        await Promise.all(updatePromises);
+      } else {
+        this.logger.debug('알림을 생성할 결제 이력이 없습니다.');
+      }
+    } catch (err) {
+      this.logger.error('알림 생성 실패', err.stack);
+      await this.slackService.sendMessage('알림 생성에 실패했습니다.');
     }
   }
 
-  //   // 결제 이력 가져오기(for of 문 사용)
-  //   const subscriptionHistories = await this.getSubscriptionHistories();
-  //   console.log('결제이력', subscriptionHistories);
 
-  //   //today 설정
-
-  //   const today = this.setToday();
-  //   console.log('today', today);
-
-  //   //결제정보 순회하면서 다음 결제일 가져오기
-  //   for (const subscriptionHistory of subscriptionHistories) {
-  //     // 결제일 설정(일단, 결제 시작일)
-  //     const payDate = subscriptionHistory.nextPayAt;
-  //     console.log('payDate', payDate);
-  //     // 알람일 설정(결제일 -1)
-  //     const notifyingDate = this.getNotifyingDate(payDate);
-  //     console.log('notifyingDate', notifyingDate);
-
-  //     //today와 notifyingDate 비교하여 알림 생성
-  //     if (notifyingDate.getTime() === today.getTime()) {
-  //       //user nickname 가져오기
-  //       const newNotification =
-  //         await this.createNotifications(subscriptionHistory);
-  //       console.log('알림 발생', newNotification);
-
-  //       //subscriptionHistory의 NextDate 업데이트
-  //       const nextPayDate = new Date(payDate);
-  //       //  결제주기 가져오기
-  //       this.updateNextDate(nextPayDate, subscriptionHistory);
-  //     } else {
-  //       // 알림 미생성 테스트를 위해 추가
-  //       const userNickname = subscriptionHistory.userSubscription.user.nickname;
-  //       console.log('알림 미발생', `${userNickname} 알림받을 날짜가 아닙니다`);
-  //     }
-  //   }
-  // }
-
-  // // subscriptionHistory데이터 가져오기
-  // async getSubscriptionHistories() {
-  //   return await this.subscriptionHistoriesRepository.find({
-  //     relations: [
-  //       'userSubscription',
-  //       'userSubscription.user',
-  //       'userSubscription.platform',
-  //     ],
-  //   });
-  // }
-
-  // // today 설정하기
-  // setToday(): Date {
-  //   const today = new Date();
-  //   return today;
-  // }
-
-  // // notifyingDate 설정하기
-  // getNotifyingDate(payDate: Date): Date {
-  //   const notifyingDate = new Date(payDate);
-  //   notifyingDate.setDate(notifyingDate.getDate() - 1); // 1일 전으로 설정
-  //   return notifyingDate;
-  // }
-
-  // // notification 생성하기
-  // async createNotifications(subscriptionHistory: any) {
-  //   const userNickname = subscriptionHistory.userSubscription.user.nickname;
-  //   const platformTitle = subscriptionHistory.userSubscription.platform.title;
-  //   const message = `${userNickname}님 ${platformTitle}결제일 1일 전입니다.`;
-  //   console.log(message);
-
-  //   const newNotification = await this.notificationRepository.save({
-  //     userId: subscriptionHistory.userSubscription.userId,
-  //     userSubscriptionId: subscriptionHistory.userSubscriptionId,
-  //     title: message,
-  //     isRead: false,
-  //     createdAt: new Date(),
-  //     readedAt: null, // Default를 null로 지정필요
-  //   });
-  //   return newNotification;
-  // }
-
-  // // subscriptionHistory의 NextDate 변경하기
-  // async updateNextDate(nextPayDate: Date, subscriptionHistory: any) {
-  //   const period = subscriptionHistory.userSubscription.period;
-  //   console.log('기간', period);
-  //   nextPayDate.setMonth(nextPayDate.getMonth() + period);
-  //   await this.subscriptionHistoriesRepository.update(subscriptionHistory, {
-  //     nextPayAt: nextPayDate,
-  //   });
-  // }
+ 
 
   /** 평점 계산 스케쥴링 */
   @Cron('0/10 * * * * *')
@@ -241,6 +161,7 @@ export class SchedulerService {
 
   @Cron('0/10 * * * * *')
   async platformList() {
+    try{
     const platforms = await this.platformRepository.find({
       select: [
         'id',
@@ -258,5 +179,9 @@ export class SchedulerService {
       ttl: 3600,
     } as any);
     console.log('플랫폼 정보를 cache에 저장했습니다.');
-  }
+  }catch(err) {
+      this.logger.error('캐시 저장 중 오류 발생', err.stack)
+      await this.slackService.sendMessage('캐시 저장 중 오류 발생');
+    }
+  } 
 }

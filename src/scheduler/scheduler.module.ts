@@ -9,6 +9,7 @@ import { Review } from './entities/review.entity';
 import { Platform } from './entities/platforms.entity';
 import { RedisModule } from './redis/redis.module';
 import { RedisService } from './redis/redis.service';
+import { SlackModule } from 'src/slack/slack.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RedisService } from './redis/redis.service';
       Platform,
     ]),
     RedisModule,
+    SlackModule, 
   ],
   providers: [SchedulerService, RedisService],
 })

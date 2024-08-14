@@ -6,6 +6,7 @@ import {
 } from '@nestjs/cache-manager';
 import { RedisService } from './redis.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SlackModule } from 'src/slack/slack.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
       inject: [ConfigService],
     }),
+    SlackModule, 
   ],
   exports: [NestCacheModule, RedisService],
   providers: [RedisService],
