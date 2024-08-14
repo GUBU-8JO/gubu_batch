@@ -30,15 +30,15 @@ jobs:
             cd /home/ubuntu/8JO/gubu_batch
 
             pm2 delete gubu-batch || true
-            
+
             rm -rf dist/
 
             tar -xzf gubu-batch.tar.gz
 
             echo "${{ secrets.SERVER_ENV }}" | base64 -d > .env
 
-            pm2 start dist/main.js --name gubu-batch
-            
+            pm2 start dist/bundle.js --name gubu-batch
+
             rm gubu-batch.tar.gz
 
             pm2 save
