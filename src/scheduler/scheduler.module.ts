@@ -7,6 +7,8 @@ import { SubscriptionHistory } from './entities/subscription-histories.entity';
 import { Notification } from './entities/notification.entity';
 import { Review } from './entities/review.entity';
 import { Platform } from './entities/platforms.entity';
+import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
 
 @Module({
   imports: [
@@ -18,7 +20,8 @@ import { Platform } from './entities/platforms.entity';
       Review,
       Platform,
     ]),
+    RedisModule,
   ],
-  providers: [SchedulerService],
+  providers: [SchedulerService, RedisService],
 })
 export class SchedulerModule {}
