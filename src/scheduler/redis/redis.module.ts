@@ -5,16 +5,20 @@ import {
   CacheModuleOptions,
 } from '@nestjs/cache-manager';
 import { RedisService } from './redis.service';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    NestCacheModule.register<CacheModuleOptions>({
-      store: redisStore,
-      host: 'redis-17544.c340.ap-northeast-2-1.ec2.redns.redis-cloud.com', // Redis 호스트
-      port: 17544, // Redis 포트
-      password: 'xE9kzc66rIPGRmdoiIQ7qTNwpN9eM37k', // Redis 비밀번호
-      ttl: 600, // 캐시 유지 시간(초)
+    ConfigModule,
+    NestCacheModule.registerAsync<CacheModuleOptions>({
+      useFactory: async (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
+        password: configService.get<string>('REDIS_PASSWORD'),
+        ttl: configService.get<number>('REDIS_TTL'),
+      }),
+      inject: [ConfigService],
     }),
   ],
   exports: [NestCacheModule, RedisService],

@@ -21,9 +21,7 @@ export class SchedulerService {
     @InjectRepository(Platform)
     private platformRepository: Repository<Platform>,
     private readonly redisService: RedisService,
-  ) {
-    // this.redisClient = redisClient;
-  }
+  ) {}
 
   /** 알림 생성 스케쥴링 */
   @Cron('10 * * * * *')
@@ -34,8 +32,7 @@ export class SchedulerService {
     const tomorrow = new Date();
     tomorrow.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
     tomorrow.setDate(tomorrow.getDate() + 1);
-    // 트러블슈팅 모든 결제일 -> 내일인 결제 이력만 불러오기
-    // nextPayAt 내일인 결제 이력
+
     const subscriptionHistories =
       await this.subscriptionHistoriesRepository.find({
         where: {
@@ -89,7 +86,7 @@ export class SchedulerService {
     }
   }
 
-  //   // 결제 이력 가져오기
+  //   // 결제 이력 가져오기(for of 문 사용)
   //   const subscriptionHistories = await this.getSubscriptionHistories();
   //   console.log('결제이력', subscriptionHistories);
 
@@ -222,7 +219,6 @@ export class SchedulerService {
     }
     // platform의 rating 변경하기
     // 플랫폼의 rating 칼럼에 업데이트 해주기
-    //console.log(roundsRating);
 
     const platforms = await this.platformRepository.find({
       order: { rating: 'DESC' },
@@ -234,9 +230,6 @@ export class SchedulerService {
     await this.redisService.setCache(cacheKey, jsonPlatform, {
       ttl: 3600,
     } as any);
-    // await this.platformRepository.update(platformId, {
-    //   rating: roundsRating,
-    // });
   }
 
   //review와 관계된 플랫폼 정보 가져오기
@@ -261,7 +254,9 @@ export class SchedulerService {
       ],
     });
     const cacheKey = 'platforms';
-    await this.redisService.setCache(cacheKey, JSON.stringify(platforms), 3600);
+    await this.redisService.setCache(cacheKey, JSON.stringify(platforms), {
+      ttl: 3600,
+    } as any);
     console.log('플랫폼 정보를 cache에 저장했습니다.');
   }
 }
