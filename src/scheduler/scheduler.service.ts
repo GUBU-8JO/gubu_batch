@@ -6,11 +6,11 @@ import { Notification } from './entities/notification.entity';
 import { SubscriptionHistory } from './entities/subscription-histories.entity';
 import { Review } from './entities/review.entity';
 import { Platform } from './entities/platforms.entity';
+import { RedisService } from './redis/redis.service';
 
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
-
   constructor(
     @InjectRepository(Notification)
     private notificationRepository: Repository<Notification>,
@@ -20,6 +20,7 @@ export class SchedulerService {
     private reviewRepository: Repository<Review>,
     @InjectRepository(Platform)
     private platformRepository: Repository<Platform>,
+    private readonly redisService: RedisService,
   ) {}
 
   /** 알림 생성 스케쥴링 */
@@ -31,8 +32,7 @@ export class SchedulerService {
     const tomorrow = new Date();
     tomorrow.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
     tomorrow.setDate(tomorrow.getDate() + 1);
-    // 트러블슈팅 모든 결제일 -> 내일인 결제 이력만 불러오기
-    // nextPayAt 내일인 결제 이력
+
     const subscriptionHistories =
       await this.subscriptionHistoriesRepository.find({
         where: {
@@ -86,7 +86,7 @@ export class SchedulerService {
     }
   }
 
-  //   // 결제 이력 가져오기
+  //   // 결제 이력 가져오기(for of 문 사용)
   //   const subscriptionHistories = await this.getSubscriptionHistories();
   //   console.log('결제이력', subscriptionHistories);
 
@@ -176,7 +176,7 @@ export class SchedulerService {
   // }
 
   /** 평점 계산 스케쥴링 */
-  @Cron('10 * * * * *')
+  @Cron('0/10 * * * * *')
   async ratingCalculation() {
     this.logger.debug('평점 계산 시작!');
 
@@ -184,8 +184,6 @@ export class SchedulerService {
     const platformsReview = await this.reviewRepository.find({
       select: ['rate', 'platformId'],
     });
-    console.log(platformsReview);
-    console.log(`platformsReview`);
 
     // platform의 review 그룹화하기
     const platformReviews = {};
@@ -198,8 +196,6 @@ export class SchedulerService {
       }
       platformReviews[review.platformId].push(review.rate);
     }
-    console.log(platformReviews);
-    console.log(`platformReviews`);
 
     // 가져온 거에서 리뷰의 평점만 골라서 배열로 만들어줌, 평점이 1도 없으면 빈배열
 
@@ -209,45 +205,58 @@ export class SchedulerService {
       const totalRate = reviewRates.reduce((sum, rate) => sum + rate, 0);
       const averageRating = totalRate / reviewRates.length;
       // 만들어진 배열을 가지고 계산, 평균
-
       // 소수점 반올림
       const roundsRating = parseFloat(averageRating.toFixed(1));
-
-      // platform의 rating 변경하기
-      // 플랫폼의 rating 칼럼에 업데이트 해주기
-      await this.platformRepository.update(platformId, {
-        rating: roundsRating,
-      });
+      console.log(roundsRating, '여기');
+      const data = await this.platformRepository.update(
+        { id: +platformId },
+        {
+          rating: roundsRating,
+        },
+      );
+      console.log('platformId :', platformId);
+      console.log('data :', data);
     }
+    // platform의 rating 변경하기
+    // 플랫폼의 rating 칼럼에 업데이트 해주기
+
+    const platforms = await this.platformRepository.find({
+      order: { rating: 'DESC' },
+      take: 10,
+    });
+
+    const cacheKey = 'platformRating';
+    const jsonPlatform = JSON.stringify(platforms);
+    await this.redisService.setCache(cacheKey, jsonPlatform, {
+      ttl: 3600,
+    } as any);
   }
 
-  // review와 관계된 플랫폼 정보 가져오기
-  // async findPlatformsReview() {
-  //   return await this.reviewRepository.find({
-  //     relations: ['platform'],
-  //   });
-  // }
+  //review와 관계된 플랫폼 정보 가져오기
+  async findPlatformsReview() {
+    return await this.reviewRepository.find({
+      relations: ['platform'],
+    });
+  }
+
+  @Cron('0/10 * * * * *')
+  async platformList() {
+    const platforms = await this.platformRepository.find({
+      select: [
+        'id',
+        'title',
+        'price',
+        'rating',
+        'image',
+        'categoryId',
+        'purchaseLink',
+        'period',
+      ],
+    });
+    const cacheKey = 'platforms';
+    await this.redisService.setCache(cacheKey, JSON.stringify(platforms), {
+      ttl: 3600,
+    } as any);
+    console.log('플랫폼 정보를 cache에 저장했습니다.');
+  }
 }
-// 기술적 의사 결정
-// 플랫폼과 리뷰를 모두 배열로 가져와줌
-// 1. 지금위의 로직은 서비스가 죽었거나, 중간에 도입했을 때도 신뢰성 있게 작동하는데
-
-// 2. 사용자가 레이팅을 입력 하면 즉시, 해당 플랫폼 Id로 검색해서 해당 플랫폼의 레이팅 점수를 계산하고 반영 하는 로직은
-// 중간에 서비스가 죽으면 신뢰성이 깨짐
-
-// 우리의 데이터가 0.001 단위로 초 중요한게 아니고, 로직에서도 소숫점 이하는 모두
-// 버리는 로직을 사용할 것이므로 위의 두가지 안중 하나를 생각 해보면 좋겠음
-
-// bcrypt 말고 다른 암호화/복호화 패키지를 사용해서 사용자 비번 / 아이디 저장하고 알려주는 거 구현
-
-// 알림 생성기능 비효율적인 코드 수정해야 됨
-
-//알림시 결제일이 주기단위로 업그레이드 돼야하는데 로직작동 X
-
-// 리뷰랑 플랫폼 ID를 싹다 긁어옴
-// 플랫폼 ID맞는 리뷰만 모아서 별점을 다 더함
-// 그 별점을 평균을 내서, 각각의 플랫폼 ID 에 있는 레이팅에 뿌려줌
-// for of, for in 때문에 전체 순환하는 로직이 되어버려서
-// 위에 알림 생성 하는 로직처럼 비효율적인 코드인데, 개선할 필요가 있음
-
-// 칼럼 하나 추가해서 총점 칼럼이 하나 있다면

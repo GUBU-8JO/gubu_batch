@@ -25,7 +25,7 @@ export class Platform {
   @Column({ type: 'int', comment: '플랫폼 구독 주기' })
   period: number;
 
-  @Column({ type: 'int', nullable: true, comment: '플랫폼의 평점' })
+  @Column({ type: 'float', nullable: true, comment: '플랫폼의 평점' })
   rating?: number;
 
   @OneToMany(
