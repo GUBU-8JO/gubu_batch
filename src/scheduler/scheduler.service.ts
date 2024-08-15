@@ -7,7 +7,7 @@ import { SubscriptionHistory } from './entities/subscription-histories.entity';
 import { Review } from './entities/review.entity';
 import { Platform } from './entities/platforms.entity';
 import { RedisService } from './redis/redis.service';
-import {SlackService} from '../slack/slack.service'
+import { SlackService } from '../slack/slack.service';
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
@@ -21,7 +21,7 @@ export class SchedulerService {
     @InjectRepository(Platform)
     private platformRepository: Repository<Platform>,
     private readonly redisService: RedisService,
-    private readonly slackService: SlackService, 
+    private readonly slackService: SlackService,
   ) {}
 
   /** 알림 생성 스케쥴링 */
@@ -50,21 +50,24 @@ export class SchedulerService {
       console.log('내일인 결제이력', subscriptionHistories);
 
       if (subscriptionHistories.length > 0) {
-        const notifications = subscriptionHistories.map((subscriptionHistory) => {
-          const userNickname = subscriptionHistory.userSubscription.user.nickname;
-          const platformTitle =
-            subscriptionHistory.userSubscription.platform.title;
-          const message = `${userNickname}님 ${platformTitle} 결제일 1일 전입니다.`;
+        const notifications = subscriptionHistories.map(
+          (subscriptionHistory) => {
+            const userNickname =
+              subscriptionHistory.userSubscription.user.nickname;
+            const platformTitle =
+              subscriptionHistory.userSubscription.platform.title;
+            const message = `${userNickname}님 ${platformTitle} 결제일 1일 전입니다.`;
 
-          return this.notificationRepository.create({
-            userId: subscriptionHistory.userSubscription.userId,
-            userSubscriptionId: subscriptionHistory.userSubscriptionId,
-            title: message,
-            isRead: false,
-            createdAt: new Date(),
-            readedAt: null,
-          });
-        });
+            return this.notificationRepository.create({
+              userId: subscriptionHistory.userSubscription.userId,
+              userSubscriptionId: subscriptionHistory.userSubscriptionId,
+              title: message,
+              isRead: false,
+              createdAt: new Date(),
+              readedAt: null,
+            });
+          },
+        );
         await this.notificationRepository.save(notifications);
         console.log('알림 발생', notifications);
 
@@ -91,9 +94,6 @@ export class SchedulerService {
       await this.slackService.sendMessage('알림 생성에 실패했습니다.');
     }
   }
-
-
- 
 
   /** 평점 계산 스케쥴링 */
   @Cron('0/10 * * * * *')
@@ -161,27 +161,27 @@ export class SchedulerService {
 
   @Cron('0/10 * * * * *')
   async platformList() {
-    try{
-    const platforms = await this.platformRepository.find({
-      select: [
-        'id',
-        'title',
-        'price',
-        'rating',
-        'image',
-        'categoryId',
-        'purchaseLink',
-        'period',
-      ],
-    });
-    const cacheKey = 'platforms';
-    await this.redisService.setCache(cacheKey, JSON.stringify(platforms), {
-      ttl: 3600,
-    } as any);
-    console.log('플랫폼 정보를 cache에 저장했습니다.');
-  }catch(err) {
-      this.logger.error('캐시 저장 중 오류 발생', err.stack)
+    try {
+      const platforms = await this.platformRepository.find({
+        select: [
+          'id',
+          'title',
+          'price',
+          'rating',
+          'image',
+          'categoryId',
+          'purchaseLink',
+          'period',
+        ],
+      });
+      const cacheKey = 'platforms';
+      await this.redisService.setCache(cacheKey, JSON.stringify(platforms), {
+        ttl: 3600,
+      } as any);
+      console.log('플랫폼 정보를 cache에 저장했습니다.');
+    } catch (err) {
+      this.logger.error('캐시 저장 중 오류 발생', err.stack);
       await this.slackService.sendMessage('캐시 저장 중 오류 발생');
     }
-  } 
+  }
 }

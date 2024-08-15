@@ -5,9 +5,10 @@ import { SlackService } from 'src/slack/slack.service';
 
 @Injectable()
 export class RedisService {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache,
-  private readonly slackService: SlackService
-) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly slackService: SlackService,
+  ) {}
 
   async setCache(key: string, value: any, ttl: number = 300): Promise<void> {
     try {
@@ -15,7 +16,7 @@ export class RedisService {
       console.log(`Cache set for key: ${key} with value: ${value}`);
     } catch (error) {
       console.error('Error setting cache:', error);
-      await this.slackService.sendMessage('Cache set failed')
+      await this.slackService.sendMessage('Cache set failed');
     }
   }
 
