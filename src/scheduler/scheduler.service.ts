@@ -100,63 +100,22 @@ export class SchedulerService {
   async ratingCalculation() {
     this.logger.debug('평점 계산 시작!');
 
-    // 리뷰 가져오기
-    const platformsReview = await this.reviewRepository.find({
-      select: ['rate', 'platformId'],
-    });
+    const topPlatforms = await this.reviewRepository.query(`
 
-    // platform의 review 그룹화하기
-    const platformReviews = {};
+      SELECT platform.id, platform.title, ROUND(AVG(review.rate), 1) AS avg_rate
+      FROM platform
+      JOIN review ON platform.id = review.platform_id
+      GROUP BY platform.id, platform.title
+      ORDER BY avg_rate DESC
+      LIMIT 10;`);
 
-    // platformId에 맞는 rate 추가
-    for (const review of platformsReview) {
-      // rate 없으면 빈 배열
-      if (!platformReviews[review.platformId]) {
-        platformReviews[review.platformId] = [];
-      }
-      platformReviews[review.platformId].push(review.rate);
-    }
+    //console.log('topPlatforms', topPlatforms);
 
-    // 가져온 거에서 리뷰의 평점만 골라서 배열로 만들어줌, 평점이 1도 없으면 빈배열
+    const cacheKey = 'topPlatforms';
 
-    // 각 platform의 rating 계산 후 업데이트
-    for (const platformId in platformReviews) {
-      const reviewRates = platformReviews[platformId];
-      const totalRate = reviewRates.reduce((sum, rate) => sum + rate, 0);
-      const averageRating = totalRate / reviewRates.length;
-      // 만들어진 배열을 가지고 계산, 평균
-      // 소수점 반올림
-      const roundsRating = parseFloat(averageRating.toFixed(1));
-      console.log(roundsRating, '여기');
-      const data = await this.platformRepository.update(
-        { id: +platformId },
-        {
-          rating: roundsRating,
-        },
-      );
-      console.log('platformId :', platformId);
-      console.log('data :', data);
-    }
-    // platform의 rating 변경하기
-    // 플랫폼의 rating 칼럼에 업데이트 해주기
-
-    const platforms = await this.platformRepository.find({
-      order: { rating: 'DESC' },
-      take: 10,
-    });
-
-    const cacheKey = 'platformRating';
-    const jsonPlatform = JSON.stringify(platforms);
-    await this.redisService.setCache(cacheKey, jsonPlatform, {
+    await this.redisService.setCache(cacheKey, JSON.stringify(topPlatforms), {
       ttl: 3600,
     } as any);
-  }
-
-  //review와 관계된 플랫폼 정보 가져오기
-  async findPlatformsReview() {
-    return await this.reviewRepository.find({
-      relations: ['platform'],
-    });
   }
 
   @Cron('0/10 * * * * *')
