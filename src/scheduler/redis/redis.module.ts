@@ -21,7 +21,7 @@ import { SlackModule } from 'src/slack/slack.module';
       }),
       inject: [ConfigService],
     }),
-    SlackModule, 
+    SlackModule,
   ],
   exports: [NestCacheModule, RedisService],
   providers: [RedisService],

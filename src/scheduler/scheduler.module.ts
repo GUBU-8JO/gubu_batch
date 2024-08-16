@@ -22,7 +22,7 @@ import { SlackModule } from 'src/slack/slack.module';
       Platform,
     ]),
     RedisModule,
-    SlackModule, 
+    SlackModule,
   ],
   providers: [SchedulerService, RedisService],
 })
