@@ -96,20 +96,24 @@ export class SchedulerService {
   }
 
   /** 평점 계산 스케쥴링 */
-  @Cron('0/10 * * * * *')
+  @Cron('10 * * * * *')
   async ratingCalculation() {
     this.logger.debug('평점 계산 시작!');
 
-    const topPlatforms = await this.reviewRepository.query(`
-
-      SELECT platform.id, platform.title, ROUND(AVG(review.rate), 1) AS avg_rate
+    const platformsRatings = await this.reviewRepository.query(`
+      SELECT platform.id, platform.title, ROUND(AVG(review.rate), 1) AS rating
       FROM platform
       JOIN review ON platform.id = review.platform_id
       GROUP BY platform.id, platform.title
-      ORDER BY avg_rate DESC
-      LIMIT 10;`);
+      ORDER BY rating DESC;`);
 
     //console.log('topPlatforms', topPlatforms);
+    for (const platform of platformsRatings) {
+      await this.platformRepository.update(platform.id, {
+        rating: platform.rating,
+      });
+    }
+    const topPlatforms = platformsRatings.slice(0, 10);
 
     const cacheKey = 'topPlatforms';
 
@@ -118,7 +122,7 @@ export class SchedulerService {
     } as any);
   }
 
-  @Cron('0/10 * * * * *')
+  @Cron('10 * * * * *')
   async platformList() {
     try {
       const platforms = await this.platformRepository.find({
