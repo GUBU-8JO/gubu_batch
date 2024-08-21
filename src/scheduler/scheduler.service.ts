@@ -13,10 +13,10 @@ export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
   constructor(
     @InjectRepository(Notification)
-    //private notificationRepository: Repository<Notification>,
+    private notificationRepository: Repository<Notification>,
     @InjectRepository(SubscriptionHistory)
-    private readonly //private subscriptionHistoriesRepository: Repository<SubscriptionHistory>,
-    redisService: RedisService,
+    private subscriptionHistoriesRepository: Repository<SubscriptionHistory>,
+    private readonly redisService: RedisService,
     private readonly slackService: SlackService,
     private readonly reviewRepository: ReviewRepository,
     private readonly platformRepository: PlatformRepository,
