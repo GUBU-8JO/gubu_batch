@@ -10,6 +10,8 @@ import { Platform } from './entities/platforms.entity';
 import { RedisModule } from './redis/redis.module';
 import { RedisService } from './redis/redis.service';
 import { SlackModule } from 'src/slack/slack.module';
+import { ReviewRepository } from './repository/review.repository';
+import { PlatformRepository } from './repository/platform.repository';
 
 @Module({
   imports: [
@@ -24,6 +26,11 @@ import { SlackModule } from 'src/slack/slack.module';
     RedisModule,
     SlackModule,
   ],
-  providers: [SchedulerService, RedisService],
+  providers: [
+    SchedulerService,
+    RedisService,
+    ReviewRepository,
+    PlatformRepository,
+  ],
 })
 export class SchedulerModule {}
