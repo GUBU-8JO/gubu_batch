@@ -82,7 +82,7 @@ export class SchedulerService {
     const cacheKey = 'topPlatforms';
 
     await this.redisService.setCache(cacheKey, JSON.stringify(topPlatforms), {
-      ttl: 3600,
+      ttl: 7200,
     } as any);
   }
 
@@ -92,7 +92,7 @@ export class SchedulerService {
       const platforms = await this.platformRepository.findPlatforms();
       const cacheKey = 'platforms';
       await this.redisService.setCache(cacheKey, JSON.stringify(platforms), {
-        ttl: 3600,
+        ttl: 7200,
       } as any);
       console.log('플랫폼 정보를 cache에 저장했습니다.');
     } catch (err) {
@@ -101,7 +101,7 @@ export class SchedulerService {
     }
   }
 
-  @Cron('0/10 * * * * *')
+  @Cron('55 * * * *')
   async renewPrice() {
     const platforms = await this.platformRepository.findPlatforms();
     const currentPrices = await Promise.all(
@@ -115,7 +115,7 @@ export class SchedulerService {
 
   private async currentPrice() {
     const price = await fetch(
-      'http://localhost:3000/api/platforms/platformPrice',
+      'http://43.200.192.49:3000/api/platforms/platformPrice',
     );
     const newPrice = await price.json();
     return newPrice.price;
