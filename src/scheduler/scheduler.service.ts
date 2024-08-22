@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
 import { SubscriptionHistory } from './entities/subscription-histories.entity';
@@ -8,6 +8,7 @@ import { RedisService } from './redis/redis.service';
 import { SlackService } from '../slack/slack.service';
 import { ReviewRepository } from './repository/review.repository';
 import { PlatformRepository } from './repository/platform.repository';
+import format from 'date-format';
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
@@ -21,6 +22,46 @@ export class SchedulerService {
     private readonly reviewRepository: ReviewRepository,
     private readonly platformRepository: PlatformRepository,
   ) {}
+
+  @Cron('* 5 * * * *')
+  async createHistory() {
+    this.logger.debug('알림 시작!');
+    // 다음 결제일이 내일인 결제 이력 가져오기
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 설정
+    const subscriptionHistories =
+      await this.subscriptionHistoriesRepository.find({
+        where: {
+          nextPayAt: today,
+          stopRequestAt: IsNull(),
+        },
+        relations: [
+          'userSubscription',
+          'userSubscription.user',
+          'userSubscription.platform',
+        ],
+      });
+    console.log('내일인 결제이력', subscriptionHistories);
+    const updatePromises = subscriptionHistories.map((subscriptionHistory) => {
+      const nextPayDate = new Date(subscriptionHistory.nextPayAt);
+      // 현재 날짜를 포맷팅하여 출력 (이 단계에서는 단순히 확인 용도)
+      const formattedDate = format('yyyy-MM-dd', nextPayDate);
+      // 현재 날짜의 월 추출
+      const currentMonth = nextPayDate.getMonth(); // 월은 0부터 시작 (0 = January)
+      // 구독 주기를 더하여 새로운 결제 날짜 설정
+      const period = subscriptionHistory.userSubscription.period;
+      nextPayDate.setMonth(currentMonth + period); // setMonth는 0부터 시작하는 월을 기대합니다.
+      // 새로운 결제 날짜를 포맷팅
+      const nextPaySetDate = format('yyyy-MM-dd', nextPayDate);
+      return this.subscriptionHistoriesRepository.insert({
+        userSubscriptionId: subscriptionHistory.id,
+        price: subscriptionHistory.price,
+        startAt: formattedDate,
+        nextPayAt: nextPaySetDate,
+      });
+    });
+    await Promise.all(updatePromises);
+  }
 
   /** 평점 계산 스케쥴링 */
   @Cron('* 0 */1 * * *')
