@@ -43,3 +43,5 @@ jobs:
         run: |
           scp -i /tmp/private_key.pem -o StrictHostKeyChecking=no -P 22 gubu-batch.tar.gz ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/home/ubuntu/8JO/gubu_batch/
         shell: bash
+
+        ## 주석
