@@ -23,7 +23,7 @@ export class SchedulerService {
     private readonly platformRepository: PlatformRepository,
   ) {}
 
-  @Cron('* 5 * * * *')
+  @Cron('* 00 * * * *')
   async createHistory() {
     this.logger.debug('알림 시작!');
     // 다음 결제일이 내일인 결제 이력 가져오기
@@ -64,7 +64,7 @@ export class SchedulerService {
   }
 
   /** 평점 계산 스케쥴링 */
-  @Cron('* 0 */1 * * *')
+  @Cron('0 * * * *')
   async ratingCalculation() {
     this.logger.debug('평점 계산 시작!');
 
@@ -86,7 +86,7 @@ export class SchedulerService {
     } as any);
   }
 
-  @Cron('10 * * * * *')
+  @Cron('0 * * * *')
   async platformList() {
     try {
       const platforms = await this.platformRepository.findPlatforms();
@@ -99,5 +99,25 @@ export class SchedulerService {
       this.logger.error('캐시 저장 중 오류 발생', err.stack);
       await this.slackService.sendMessage('캐시 저장 중 오류 발생');
     }
+  }
+
+  @Cron('0/10 * * * * *')
+  async renewPrice() {
+    const platforms = await this.platformRepository.findPlatforms();
+    const currentPrices = await Promise.all(
+      platforms.map(async (platform) => {
+        const price = await this.currentPrice();
+        return { id: platform.id, price };
+      }),
+    );
+    await this.platformRepository.update(currentPrices);
+  }
+
+  private async currentPrice() {
+    const price = await fetch(
+      'http://localhost:3000/api/platforms/platformPrice',
+    );
+    const newPrice = await price.json();
+    return newPrice.price;
   }
 }
