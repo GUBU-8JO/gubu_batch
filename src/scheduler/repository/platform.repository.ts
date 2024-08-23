@@ -34,4 +34,13 @@ export class PlatformRepository {
     });
     return platforms;
   }
+
+  async update(currentPrices) {
+    const conflictPaths = ['id'];
+    const price = await this.repository.upsert(currentPrices, {
+      conflictPaths,
+    });
+
+    return price;
+  }
 }
