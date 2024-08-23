@@ -1,0 +1,17 @@
+org: gingercat
+app: gubu
+service: gubu-notification
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+
+functions:
+  hello:
+    name: gubu-lambda-notification
+    handler: handler.handler
+    events:
+      - schedule:
+          rate: rate(1 minute)
+          enabled: true
